@@ -33,7 +33,6 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUp, faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import Pagamento from "../Components/pagamento/pagamento.tsx";
-// Configuração do Chart.js
 
 interface IConta {
   id: number;
@@ -73,14 +72,14 @@ const Dashboard: React.FC = () => {
     setIsEntrada(event.target.value === "entrada");
   };
   const handleCategorySelect = (id: number) => {
-    setSelectedCategoryId(id); // Atualiza o ID da categoria selecionada
+    setSelectedCategoryId(id);
   };
   const handlePagamentoSelect = (id: number) => {
-    setSelectedPagamentoId(id); // Atualiza o ID da categoria selecionada
+    setSelectedPagamentoId(id);
   };
   const handleDateSelect = (date: Date | null) => {
-    setDataSelecionada(date); // Atualiza o estado com a data selecionada
-    console.log(date); // Aqui você pode fazer o que quiser com a data selecionada
+    setDataSelecionada(date);
+    console.log(date);
   };
   const somarReceitas = async (): Promise<void> => {
     try {
@@ -130,7 +129,6 @@ const Dashboard: React.FC = () => {
   return (
     <Box>
       <Box sx={{ padding: 3 }}>
-        {/* Cards */}
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <Card>
@@ -175,10 +173,7 @@ const Dashboard: React.FC = () => {
           </Grid>
         </Grid>
 
-        {/* Gráfico */}
-        <Box sx={{ marginTop: 4, marginBottom: 40, height: 400 }}>
-          <Grafico />
-        </Box>
+        <Grafico isPlanejamentoContas={false} />
       </Box>
 
       <Card>
@@ -249,7 +244,11 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Table dashboard={true} planejamentoContas={false} openModal={handleCloseModal}/>
+      <Table
+        dashboard={true}
+        planejamentoContas={false}
+        openModal={handleCloseModal}
+      />
     </Box>
   );
 };

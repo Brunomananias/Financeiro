@@ -166,3 +166,4 @@ D:\Projetos\FinançasPessoais\API\API_Financas\API_Financas\obj\Debug\net8.0\ref
 D:\Projetos\FinançasPessoais\API\API_Financas\API_Financas\obj\Debug\net8.0\API_Financas.pdb
 D:\Projetos\FinançasPessoais\API\API_Financas\API_Financas\obj\Debug\net8.0\API_Financas.genruntimeconfig.cache
 D:\Projetos\FinançasPessoais\API\API_Financas\API_Financas\obj\Debug\net8.0\ref\API_Financas.dll
+D:\Projetos\FinançasPessoais\API\API_Financas\API_Financas\obj\Debug\net8.0\API_Financas.sourcelink.json

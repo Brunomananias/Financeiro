@@ -14,6 +14,10 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUp, faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons/faExclamationTriangle";
+import { toast, ToastContainer } from "react-toastify";
+import { Bounce } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 interface IConta {
   id: number;
@@ -39,15 +43,19 @@ interface ITabelaProps {
   dashboard: boolean;
   planejamentoContas: boolean;
   openModal: (conta: IConta) => void;
+  onDataChange?: () => void;
 }
 
-const Tabela: React.FC<ITabelaProps> = ({ dashboard, planejamentoContas, openModal }) => {
+const Tabela: React.FC<ITabelaProps> = ({ onDataChange, dashboard, planejamentoContas, openModal }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [contas, setContas] = useState<IConta[]>([]);
   const [categorias, setCategorias] = useState<ICategoria[]>([]);
   const [formaPagamento, setFormaPagamento] = useState<IPagamento[]>([]);
-  const [open, setOpen] = useState(false);
+  
+    if (onDataChange) {
+      onDataChange();
+    }
 
   const listarContas = async (): Promise<void> => {
     const response = await axios.get<IConta[]>(
@@ -69,7 +77,37 @@ const Tabela: React.FC<ITabelaProps> = ({ dashboard, planejamentoContas, openMod
     );
     setFormaPagamento(response.data);
   };
-  // Função para controlar a mudança de página
+
+  const deletarConta = async (id: number): Promise<void> => {
+    try {
+      const response = await axios.delete(`http://localhost:5085/api/conta/${id}`);
+      toast.success("Deletado com sucesso!", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+      });
+    } catch (error) {
+      const errorMessage = error.response?.data?.mensagem 
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+      });
+    }
+  };
+  
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -94,10 +132,6 @@ const Tabela: React.FC<ITabelaProps> = ({ dashboard, planejamentoContas, openMod
       : "forma de pagamento não encontrada";
   };
 
-  const handleOpenModal = (conta: any) => {
-    setOpen(true);
-  };
-
   useEffect(() => {
     listarContas();
     listarPagamentos();
@@ -119,9 +153,17 @@ const Tabela: React.FC<ITabelaProps> = ({ dashboard, planejamentoContas, openMod
               <strong>Categoria</strong>
             </TableCell>
             {!dashboard && (
+              <>
               <TableCell>
                 <strong>Vencimento</strong>
               </TableCell>
+              <TableCell>
+                <strong></strong>
+              </TableCell>
+              <TableCell>
+                <strong></strong>
+              </TableCell>
+              </>
             )}
             {dashboard && (
               <>
@@ -175,6 +217,13 @@ const Tabela: React.FC<ITabelaProps> = ({ dashboard, planejamentoContas, openMod
                   >
                     Pagar
                   </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => deletarConta(row.id)}
+                  >
+                    Apagar
+                  </Button>
                 </TableCell>
                 </>
                 )}
@@ -204,9 +253,9 @@ const Tabela: React.FC<ITabelaProps> = ({ dashboard, planejamentoContas, openMod
         component="div"
         count={
           contas.filter((row) =>
-            dashboard ? row.dataLancamento : !row.dataLancamento
+            dashboard ? row.dataLancamento : !row.vencimento
           ).length
-        } // Atualiza a contagem com base no filtro
+        }
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}

@@ -47,12 +47,27 @@ namespace FinanceApi.Controllers
                 return NotFound();
             }
 
-            conta.DataLancamento = contaAtualizada.DataLancamento ?? DateTime.Now; // Atualiza a data de lançamento
+            conta.DataLancamento = contaAtualizada.DataLancamento ?? DateTime.Now;
             conta.Forma_pagamento_id = contaAtualizada.Forma_pagamento_id;
             conta.Tipo = "saída";
             _context.SaveChanges();
 
             return Ok(conta);
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult DeletarConta(int id)
+        {
+            var conta = _context.Contas.FirstOrDefault(c => c.Id == id);
+            if(conta == null)
+            {
+                return NotFound(new { mensagem = "Conta não encontrada." });
+            }
+
+            _context.Contas.Remove(conta);
+            _context.SaveChanges();
+
+            return Ok(new { mensagem = "Conta deletada com sucesso." });
         }
 
     }

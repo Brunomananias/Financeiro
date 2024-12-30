@@ -5,18 +5,24 @@ import {
   CardContent,
   FormControl,
   FormControlLabel,
+  Grid,
   Modal,
   RadioGroup,
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import react from "react";
 import Categoria from "../Components/categoria/Categoria.tsx";
 import Table from "../Components/table/table.tsx";
 import DatePicker from "../Components/dataPicker/dataPicker.tsx";
 import axios from "axios";
 import Pagamento from "../Components/pagamento/pagamento.tsx";
+import { Bounce, toast } from "react-toastify";
+import "react-toastify/ReactToastify.css";
+import Grafico from "../Components/grafico/grafico.tsx";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
 
 interface IConta {
   id: number;
@@ -31,13 +37,16 @@ interface IConta {
 
 const PlanejamentoContas: React.FC = () => {
   const [descricao, setDescricao] = useState<string>("");
-  const [valor, setValor] = useState<number>(0);
+  const [valor, setValor] = useState<number | undefined>(undefined);
+  const [input, setInput] = useState<string>("");
+  const [total, setTotal] = useState<number>(0);
+  const [totalMesAtual, setTotalMesAtual] = useState<number>(0);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
   const [selectedPagamentoId, setSelectedPagamentoId] = useState<number | null>(
-      null
-    );
+    null
+  );
   const [selectedConta, setSelectedConta] = useState<IConta | null>(null);
   const [open, setOpen] = useState(false);
   const [dataSelecionada, setDataSelecionada] = useState<Date | null>(null);
@@ -46,7 +55,6 @@ const PlanejamentoContas: React.FC = () => {
   };
   const handleDateSelect = (date: Date | null) => {
     setDataSelecionada(date);
-    console.log(date);
   };
   const adicionarConta = async (): Promise<void> => {
     await axios.post("http://localhost:5085/api/conta", {
@@ -55,6 +63,18 @@ const PlanejamentoContas: React.FC = () => {
       categoriaId: selectedCategoryId,
       vencimento: dataSelecionada,
       vencida: false,
+    });
+    somarContas();
+    toast.success("Conta adicionada com sucesso!", {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+      transition: Bounce,
     });
   };
 
@@ -73,27 +93,140 @@ const PlanejamentoContas: React.FC = () => {
   };
 
   const confirmarPagamento = async (conta: IConta) => {
-    try {
-        console.log(selectedPagamentoId);
-      const response = await axios.put(`http://localhost:5085/api/conta/${conta.id}`, {
-        ...conta,
-        forma_pagamento_id: selectedPagamentoId,
-        dataLancamento: new Date().toISOString(),
-      });
+    try {      
+      const response = await axios.put(
+        `http://localhost:5085/api/conta/${conta.id}`,
+        {
+          ...conta,
+          forma_pagamento_id: selectedPagamentoId,
+          dataLancamento: new Date().toISOString(),
+        }
+      );
 
       if (response.status === 200) {
-        alert("Pagamento confirmado com sucesso!");
+        somarContas();
+        toast.success("Pagamento confirmado com sucesso!", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "dark",
+          transition: Bounce,
+        });
         return response.data;
       } else {
-        alert("Erro ao confirmar pagamento.");
+        toast.error("Error ao confirmar pagamento!", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "dark",
+          transition: Bounce,
+        });
       }
     } catch (error) {
-      console.error("Erro ao confirmar pagamento:", error);
-      alert("Erro ao confirmar pagamento.");
+      toast.error("Error ao confirmar pagamento!", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+      });
     }
   };
+
+  const somarContas = async (): Promise<void> => {
+    try {
+      const response = await axios.get("http://localhost:5085/api/conta");
+      const contasSemTipo = response.data.filter(
+        (conta: IConta) => !conta.dataLancamento
+      );
+      const somaContas = contasSemTipo.reduce(
+        (total: number, conta: IConta) => total + conta.valor,
+        0
+      );
+    const mesAtual = new Date().getMonth();
+    const anoAtual = new Date().getFullYear();
+    const contasNoMesAtual = response.data.filter((conta: IConta) => {
+      const dataVencimento = new Date(conta.vencimento);
+      return (
+        !conta.dataLancamento &&
+        dataVencimento.getMonth() === mesAtual &&
+        dataVencimento.getFullYear() === anoAtual
+      );
+    });
+      const somaContasNoMesAtual = contasNoMesAtual.reduce(
+        (total: number, conta: IConta) => total + conta.valor,
+        0
+      );
+      setTotal(somaContas);
+      setTotalMesAtual(somaContasNoMesAtual);
+    } catch (error) {
+      console.error("Erro ao calcular as contas sem tipo:", error);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    const formattedValue = inputValue.replace(/[^0-9,\.]/g, "");
+    setInput(formattedValue);
+    const numericValue = parseFloat(formattedValue.replace(",", "."));
+    if (!isNaN(numericValue)) {
+      setValor(numericValue);
+    } else {
+      setValor(undefined);
+    }
+  };
+
+  useEffect(() => {
+    somarContas();
+  }, []);
+
   return (
     <>
+    <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">Contas a Vencer Total</Typography>
+                <Typography variant="h4" color="green">
+                  <FontAwesomeIcon icon={faArrowUp} color="green" size="1x" />
+                  {new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  }).format(total)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+            <Typography variant="h6">Contas a Vencer no mês atual</Typography>
+            <Typography variant="h4" color="red">
+                <FontAwesomeIcon icon={faArrowDown} color="red" size="1x" />
+                {new Intl.NumberFormat("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+                }).format(totalMesAtual)}
+            </Typography>
+            </CardContent>
+        </Card>
+          </Grid>
+    </Grid>
+     
+      
+      <Grafico isPlanejamentoContas={true} />
       <Card>
         <CardContent>
           <Typography variant="h6">Cadastrar conta</Typography>
@@ -116,10 +249,8 @@ const PlanejamentoContas: React.FC = () => {
               id="outlined-basic"
               label="Valor"
               variant="outlined"
-              value={valor}
-              onChange={(e) =>
-                setValor(Number(e.target.value.replace(",", ".")))
-              }
+              value={input}
+              onChange={handleChange}
             />
             <FormControl></FormControl>
             <Categoria onCategorySelect={handleCategorySelect} />
@@ -149,6 +280,7 @@ const PlanejamentoContas: React.FC = () => {
         dashboard={false}
         planejamentoContas={true}
         openModal={handleOpenModal}
+        onDataChange={somarContas}
       />
 
       <Modal open={open} onClose={handleCloseModal}>
@@ -205,11 +337,12 @@ const PlanejamentoContas: React.FC = () => {
                   );
 
                   if (contaAtualizada) {
-                    // Atualiza a lista de contas no estado
-                    setSelectedConta((prevConta) => 
-                        prevConta && prevConta.id === contaAtualizada.id ? contaAtualizada : prevConta
+                    setSelectedConta((prevConta) =>
+                      prevConta && prevConta.id === contaAtualizada.id
+                        ? contaAtualizada
+                        : prevConta
                     );
-                    setOpen(false); // Fecha o modal
+                    setOpen(false);
                   }
                 }
               }}

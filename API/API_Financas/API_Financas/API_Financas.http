@@ -1,6 +1,10 @@
-@API_Financas_HostAddress = http://localhost:5085
+@API_Financas_HostAddress = https://localhost:7287
 
 GET {{API_Financas_HostAddress}}/api/categoria
 Accept: application/json
+
+###
+
+GET {{API_Financas_HostAddress}}/api/pagamentos
 
 ###
