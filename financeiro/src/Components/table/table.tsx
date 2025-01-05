@@ -182,9 +182,14 @@ const Tabela: React.FC<ITabelaProps> = ({ onDataChange, dashboard, planejamentoC
         </TableHead>
         <TableBody>
           {contas
+           .sort((a, b) => {
+            const dataA = dashboard ? new Date(a.dataLancamento) : new Date(a.vencimento);
+            const dataB = dashboard ? new Date(b.dataLancamento) : new Date(b.vencimento);
+            return dataB.getTime() - dataA.getTime();
+          })
             .filter((row) =>
               dashboard ? row.dataLancamento : !row.dataLancamento
-            ) // Filtra com base no tipo de página
+            )
             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
             .map((row) => (
               <TableRow key={row.id}>
