@@ -18,7 +18,6 @@ const Navbar: React.FC = () => {
           <Button color="inherit" sx={{ marginRight: 1 }}>
             Configurações
           </Button>
-          <Button color="inherit">Login</Button>
         </Box>
       </Toolbar>
     </AppBar>

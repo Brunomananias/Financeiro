@@ -48,7 +48,7 @@ interface ITabelaProps {
 
 const Tabela: React.FC<ITabelaProps> = ({ onDataChange, dashboard, planejamentoContas, openModal }) => {
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [contas, setContas] = useState<IConta[]>([]);
   const [categorias, setCategorias] = useState<ICategoria[]>([]);
   const [formaPagamento, setFormaPagamento] = useState<IPagamento[]>([]);
@@ -249,11 +249,11 @@ const Tabela: React.FC<ITabelaProps> = ({ onDataChange, dashboard, planejamentoC
         </TableBody>
       </Table>
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
+        rowsPerPageOptions={[10, 25]}
         component="div"
         count={
           contas.filter((row) =>
-            dashboard ? row.dataLancamento : !row.vencimento
+            dashboard ? row.dataLancamento : !row.dataLancamento
           ).length
         }
         rowsPerPage={rowsPerPage}

@@ -33,6 +33,7 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUp, faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import Pagamento from "../Components/pagamento/pagamento.tsx";
+import { Bounce, toast } from "react-toastify";
 
 interface IConta {
   id: number;
@@ -58,7 +59,8 @@ const Dashboard: React.FC = () => {
   const [despesas, setDespesas] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
   const [descricao, setDescricao] = useState<string>("");
-  const [valor, setValor] = useState<number>(0);
+  const [valor, setValor] = useState<number | undefined>(undefined);
+  const [input, setInput] = useState<string>("");
   const [isEntrada, setIsEntrada] = useState<boolean>(false);
   const [open, setOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
@@ -116,11 +118,35 @@ const Dashboard: React.FC = () => {
       categoriaId: selectedCategoryId,
       forma_pagamento_id: selectedPagamentoId,
     });
+    somarReceitas();
+    toast.success("Conta adicionada!", {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+      transition: Bounce,
+    });
   };
 
   const handleCloseModal = () => {
     setOpen(false);
   };
+
+  const handleValor = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const inputValue = e.target.value;
+      const formattedValue = inputValue.replace(/[^0-9,\.]/g, "");
+      setInput(formattedValue);
+      const numericValue = parseFloat(formattedValue.replace(",", "."));
+      if (!isNaN(numericValue)) {
+        setValor(numericValue);
+      } else {
+        setValor(undefined);
+      }
+    };
 
   useEffect(() => {
     somarReceitas();
@@ -198,10 +224,8 @@ const Dashboard: React.FC = () => {
               id="outlined-basic"
               label="Valor"
               variant="outlined"
-              value={valor}
-              onChange={(e) =>
-                setValor(Number(e.target.value.replace(",", ".")))
-              }
+              value={input}
+              onChange={handleValor}
             />
             <FormControl>
               <RadioGroup
