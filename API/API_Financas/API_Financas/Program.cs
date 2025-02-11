@@ -1,4 +1,5 @@
 using API_Financas.Data;
+using API_Financas.IoC;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -21,6 +22,8 @@ builder.Services.AddCors(options =>
                    .AllowAnyMethod();
         });
 });
+
+builder.Services.AddRepositories();
 
 var app = builder.Build();
 app.UseCors("AllowAll");

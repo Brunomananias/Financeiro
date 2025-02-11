@@ -182,11 +182,25 @@ const Tabela: React.FC<ITabelaProps> = ({ onDataChange, dashboard, planejamentoC
         </TableHead>
         <TableBody>
           {contas
-           .sort((a, b) => {
+          .sort((a, b) => {
             const dataA = dashboard ? new Date(a.dataLancamento) : new Date(a.vencimento);
             const dataB = dashboard ? new Date(b.dataLancamento) : new Date(b.vencimento);
-            return dataB.getTime() - dataA.getTime();
-          })
+      
+            let dateComparison;
+
+            if (dashboard) {
+              dateComparison = dataB.getTime() - dataA.getTime();
+            } else {
+              dateComparison = dataA.getTime() - dataB.getTime();
+            }
+          
+            // Caso as datas sejam iguais, prioriza o último adicionado (ID maior)
+            if (dateComparison === 0) {
+              return b.id - a.id; // Substitua `id` pelo campo que identifica a ordem de inserção
+            }
+      
+            return dateComparison;
+          })    
             .filter((row) =>
               dashboard ? row.dataLancamento : !row.dataLancamento
             )
@@ -204,23 +218,31 @@ const Tabela: React.FC<ITabelaProps> = ({ onDataChange, dashboard, planejamentoC
                 {!dashboard && (
                   <>
                   <TableCell>
-                    {new Date(row.vencimento).toLocaleDateString("pt-BR")}
-                    {new Date(row.vencimento).toLocaleDateString("pt-BR") ===
-                      new Date().toLocaleDateString("pt-BR") && (
-                      <FontAwesomeIcon
-                        icon={faExclamationTriangle}
-                        color="orange"
-                        style={{ marginLeft: "8px" }}
-                      />
-                    )}
-                  </TableCell>
+                  {new Date(row.vencimento).toLocaleDateString("pt-BR")}
+                  {new Date(row.vencimento).getTime() < new Date().setHours(0, 0, 0, 0) && (
+                    <FontAwesomeIcon
+                      icon={faExclamationTriangle}
+                      color="orange"
+                      style={{ marginLeft: "8px" }}
+                    />
+                  )}
+                </TableCell>
+
                   <TableCell>
                   <Button
                     variant="contained"
                     color="primary"
                     onClick={() => openModal(row)}
+                    style={{ marginRight: 10 }}
                   >
                     Pagar
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    style={{ marginRight: 10 }}
+                  >
+                    Editar
                   </Button>
                   <Button
                     variant="contained"

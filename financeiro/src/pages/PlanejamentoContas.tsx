@@ -35,6 +35,11 @@ interface IConta {
   vencimento: Date;
 }
 
+interface ICategoria {
+  id: number;
+  nome: string;
+}
+
 const PlanejamentoContas: React.FC = () => {
   const [descricao, setDescricao] = useState<string>("");
   const [valor, setValor] = useState<number | undefined>(undefined);
@@ -49,7 +54,9 @@ const PlanejamentoContas: React.FC = () => {
   );
   const [selectedConta, setSelectedConta] = useState<IConta | null>(null);
   const [open, setOpen] = useState(false);
+  const [abrirModalEditar, setAbrirModalEditar] = useState(false);
   const [dataSelecionada, setDataSelecionada] = useState<Date | null>(null);
+  const [categorias, setCategorias] = useState<ICategoria[]>([]);
   const handleCategorySelect = (id: number) => {
     setSelectedCategoryId(id);
   };
@@ -87,13 +94,52 @@ const PlanejamentoContas: React.FC = () => {
     setOpen(true);
   };
 
+  const handleAbrirModalEditar = (conta: IConta) => {
+    setSelectedConta(conta);
+    setAbrirModalEditar(true);
+  };
+
   const handleCloseModal = () => {
     setOpen(false);
     setSelectedConta(null);
   };
 
+  const fecharModalEditar = () => {
+    setAbrirModalEditar(false);
+    setSelectedConta(null);
+  };
+
+  const getCategoriaNome = (categoriaId: number) => {
+    const categoria = categorias.find((c) => c.id === categoriaId);
+    return categoria ? categoria.nome : "Categoria não encontrada";
+  };
+
+  const atualizarConta = async (conta: IConta) => {
+    try {
+      const response = await fetch(`/api/contas/${conta.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(conta),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar conta");
+      }
+  
+      const dadosAtualizados = await response.json();
+      return dadosAtualizados;
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao atualizar a conta.");
+      return null;
+    }
+  };
+  
+
   const confirmarPagamento = async (conta: IConta) => {
-    try {      
+    try {
       const response = await axios.put(
         `http://localhost:5085/api/conta/${conta.id}`,
         {
@@ -155,16 +201,16 @@ const PlanejamentoContas: React.FC = () => {
         (total: number, conta: IConta) => total + conta.valor,
         0
       );
-    const mesAtual = new Date().getMonth();
-    const anoAtual = new Date().getFullYear();
-    const contasNoMesAtual = response.data.filter((conta: IConta) => {
-      const dataVencimento = new Date(conta.vencimento);
-      return (
-        !conta.dataLancamento &&
-        dataVencimento.getMonth() === mesAtual &&
-        dataVencimento.getFullYear() === anoAtual
-      );
-    });
+      const mesAtual = new Date().getMonth();
+      const anoAtual = new Date().getFullYear();
+      const contasNoMesAtual = response.data.filter((conta: IConta) => {
+        const dataVencimento = new Date(conta.vencimento);
+        return (
+          !conta.dataLancamento &&
+          dataVencimento.getMonth() === mesAtual &&
+          dataVencimento.getFullYear() === anoAtual
+        );
+      });
       const somaContasNoMesAtual = contasNoMesAtual.reduce(
         (total: number, conta: IConta) => total + conta.valor,
         0
@@ -194,38 +240,37 @@ const PlanejamentoContas: React.FC = () => {
 
   return (
     <>
-    <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6">Contas a Vencer Total</Typography>
-                <Typography variant="h4" color="green">
-                  <FontAwesomeIcon icon={faArrowUp} color="green" size="1x" />
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(total)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={4}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
-            <Typography variant="h6">Contas a Vencer no mês atual</Typography>
-            <Typography variant="h4" color="red">
+              <Typography variant="h6">Contas a Vencer Total</Typography>
+              <Typography variant="h4" color="green">
+                <FontAwesomeIcon icon={faArrowUp} color="green" size="1x" />
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(total)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6">Contas a Vencer no mês atual</Typography>
+              <Typography variant="h4" color="red">
                 <FontAwesomeIcon icon={faArrowDown} color="red" size="1x" />
                 {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
+                  style: "currency",
+                  currency: "BRL",
                 }).format(totalMesAtual)}
-            </Typography>
+              </Typography>
             </CardContent>
-        </Card>
-          </Grid>
-    </Grid>
-     
-      
+          </Card>
+        </Grid>
+      </Grid>
+
       <Grafico isPlanejamentoContas={true} />
       <Card>
         <CardContent>
@@ -281,6 +326,7 @@ const PlanejamentoContas: React.FC = () => {
         planejamentoContas={true}
         openModal={handleOpenModal}
         onDataChange={somarContas}
+        abrirModalEditar={handleAbrirModalEditar}
       />
 
       <Modal open={open} onClose={handleCloseModal}>
@@ -348,6 +394,125 @@ const PlanejamentoContas: React.FC = () => {
               }}
             >
               Confirmar Pagamento
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      <Modal open={abrirModalEditar} onClose={fecharModalEditar}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="h6" component="h2" gutterBottom>
+            Editar Conta
+          </Typography>
+          {selectedConta && (
+            <>
+              <Typography>
+                <strong>Descrição:</strong>
+              </Typography>
+              <TextField
+                id="descricao"
+                variant="standard"
+                value={selectedConta.descricao}
+                onChange={(e) =>
+                  setSelectedConta(
+                    (prev) => prev && { ...prev, descricao: e.target.value }
+                  )
+                }
+              />
+              <Typography>
+                <strong>Valor:</strong>{" "}
+              </Typography>
+              <TextField
+                id="valor"
+                variant="standard"
+                value={selectedConta.valor}
+                onChange={(e) =>
+                  setSelectedConta(
+                    (prev) =>
+                      prev && { ...prev, valor: parseFloat(e.target.value) }
+                  )
+                }
+              />
+              <Pagamento
+                onPagamentoSelect={(pagamento) =>
+                  setSelectedConta((prev) => prev && { ...prev, pagamento })
+                }
+              />
+              <Typography>
+                <strong>Categoria:</strong>{" "}
+                <Categoria
+                  onCategorySelect={(categoria) =>
+                    setSelectedConta((prev) => prev && { ...prev, categoria })
+                  }
+                />
+              </Typography>
+              <Typography>
+                <strong>Data de Vencimento:</strong>
+              </Typography>
+              <TextField
+                id="dataVencimento"
+                type="date"
+                variant="standard"
+                value={
+                  selectedConta.vencimento
+                    ? new Date(selectedConta.vencimento).toISOString().split("T")[0]
+                    : ""
+                }
+                onChange={(e) =>
+                  setSelectedConta((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          dvencimento: new Date(e.target.value).toISOString(),
+                        }
+                      : null
+                  )
+                }
+              />              
+            </>
+          )}
+
+          <Box mt={2} display="flex" justifyContent="space-between">
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleCloseModal}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={async () => {
+                if (selectedConta) {
+                  const contaAtualizada = await confirmarPagamento(
+                    selectedConta
+                  );
+
+                  if (contaAtualizada) {
+                    setSelectedConta((prevConta) =>
+                      prevConta && prevConta.id === contaAtualizada.id
+                        ? contaAtualizada
+                        : prevConta
+                    );
+                    setOpen(false);
+                  }
+                }
+              }}
+            >
+              Editar
             </Button>
           </Box>
         </Box>
