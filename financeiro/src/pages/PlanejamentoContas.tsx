@@ -22,7 +22,8 @@ import { Bounce, toast } from "react-toastify";
 import "react-toastify/ReactToastify.css";
 import Grafico from "../Components/grafico/grafico.tsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
+import { faArrowDown, faArrowUp, faCoins, faHandHoldingDollar } from "@fortawesome/free-solid-svg-icons";
+import apiClient from "../services/apiClient.tsx";
 
 interface IConta {
   id: number;
@@ -41,6 +42,7 @@ interface ICategoria {
 }
 
 const PlanejamentoContas: React.FC = () => {
+  const [idUsuario, setIdUsuario] = useState(0);
   const [descricao, setDescricao] = useState<string>("");
   const [valor, setValor] = useState<number | undefined>(undefined);
   const [input, setInput] = useState<string>("");
@@ -64,25 +66,58 @@ const PlanejamentoContas: React.FC = () => {
     setDataSelecionada(date);
   };
   const adicionarConta = async (): Promise<void> => {
-    await axios.post("http://localhost:5085/api/conta", {
-      descricao: descricao,
-      valor: valor,
-      categoriaId: selectedCategoryId,
-      vencimento: dataSelecionada,
-      vencida: false,
-    });
-    somarContas();
-    toast.success("Conta adicionada com sucesso!", {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "dark",
-      transition: Bounce,
-    });
+    try {
+      await apiClient.post("/api/conta", {
+        descricao: descricao,
+        valor: valor,
+        categoriaId: selectedCategoryId,
+        vencimento: dataSelecionada,
+        vencida: false,
+        usuarioId: idUsuario
+      });
+      somarContas();
+      toast.success("Conta adicionada com sucesso!", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+      });
+    } catch (error: any) {
+      if (error.response && error.response.status === 400) {
+        const validationErrors = error.response.data;
+        console.log(validationErrors);
+        validationErrors.forEach((err: any) => {
+          toast.error(err.errorMessage, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Bounce,
+          });
+        });
+      } else {
+        toast.error("Ocorreu um erro ao adicionar a conta. Tente novamente.", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "dark",
+          transition: Bounce,
+        });
+      }
+    }
   };
 
   const handlePagamentoSelect = (id: number) => {
@@ -140,8 +175,8 @@ const PlanejamentoContas: React.FC = () => {
 
   const confirmarPagamento = async (conta: IConta) => {
     try {
-      const response = await axios.put(
-        `http://localhost:5085/api/conta/${conta.id}`,
+      const response = await apiClient.put(
+        `/api/conta/${conta.id}`,
         {
           ...conta,
           forma_pagamento_id: selectedPagamentoId,
@@ -193,7 +228,7 @@ const PlanejamentoContas: React.FC = () => {
 
   const somarContas = async (): Promise<void> => {
     try {
-      const response = await axios.get("http://localhost:5085/api/conta");
+      const response = await apiClient.get("/api/conta");
       const contasSemTipo = response.data.filter(
         (conta: IConta) => !conta.dataLancamento
       );
@@ -240,38 +275,53 @@ const PlanejamentoContas: React.FC = () => {
 
   return (
     <>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">Contas a Vencer Total</Typography>
-              <Typography variant="h4" color="green">
-                <FontAwesomeIcon icon={faArrowUp} color="green" size="1x" />
-                {new Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(total)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">Contas a Vencer no mês atual</Typography>
-              <Typography variant="h4" color="red">
-                <FontAwesomeIcon icon={faArrowDown} color="red" size="1x" />
-                {new Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(totalMesAtual)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
+     <Box sx={{ padding: 3 }}>
+    <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <Card
+                  sx={{ backgroundColor: "blue", color: "white", borderRadius: 2 }}
+                >
+                  <CardContent>
+                    <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                    Contas a Vencer
+                    </Typography>
+                    <Typography
+                      variant="h4"
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <FontAwesomeIcon icon={faHandHoldingDollar} />
+                      {new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      }).format(total)}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Card
+                  sx={{ backgroundColor: "red", color: "white", borderRadius: 2 }}
+                >
+                  <CardContent>
+                    <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                    Contas a Vencer no mês atual
+                    </Typography>
+                    <Typography
+                      variant="h4"
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <FontAwesomeIcon icon={faHandHoldingDollar} />
+                      {new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      }).format(totalMesAtual)}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
       <Grafico isPlanejamentoContas={true} />
+      </Box>
       <Card>
         <CardContent>
           <Typography variant="h6">Cadastrar conta</Typography>
@@ -326,7 +376,7 @@ const PlanejamentoContas: React.FC = () => {
         planejamentoContas={true}
         openModal={handleOpenModal}
         onDataChange={somarContas}
-        abrirModalEditar={handleAbrirModalEditar}
+        // abrirModalEditar={handleAbrirModalEditar}
       />
 
       <Modal open={open} onClose={handleCloseModal}>

@@ -4,6 +4,7 @@ using API_Financas.Models;
 using Microsoft.EntityFrameworkCore;
 using API_Financas.Repositories;
 using API_Financas.Repositories.Interfaces;
+using FluentValidation;
 
 namespace FinanceApi.Controllers
 {
@@ -12,10 +13,12 @@ namespace FinanceApi.Controllers
     public class ContaController : ControllerBase
     {
         private readonly IContaRepository _contaRepository;
+        private readonly IValidator<Conta> _contaValidator;
 
-        public ContaController(IContaRepository contaRepository)
+        public ContaController(IContaRepository contaRepository, IValidator<Conta> contaValidator)
         {
             _contaRepository = contaRepository;
+            _contaValidator = contaValidator;
         }
 
         [HttpGet]
@@ -40,6 +43,12 @@ namespace FinanceApi.Controllers
         {
             if (conta == null)
                 return BadRequest("Conta não pode ser nula.");
+
+            var validationResult = _contaValidator.Validate(conta);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors);
+            }
 
             await _contaRepository.AdicionarConta(conta);
             return CreatedAtAction(nameof(GetById), new { id = conta.Id }, conta);

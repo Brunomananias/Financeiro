@@ -100,7 +100,7 @@ const Grafico: React.FC<IGraficoProps> = ({ isPlanejamentoContas }) => {
     <div>
       {isPlanejamentoContas ? <h2>Gráfico de Contas a Vencer</h2> : <h2>Gráfico de Receitas e Despesas</h2>}
       
-      {dataGrafico ? <Bar data={dataGrafico} /> : <p>Carregando...</p>}
+      {dataGrafico ? <Bar data={dataGrafico} width={400} height={100} /> : <p>Carregando...</p>}
     </div>
   );
 };
