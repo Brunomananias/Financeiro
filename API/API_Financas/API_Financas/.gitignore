@@ -1,0 +1,33 @@
+.vs/
+
+# Arquivos de build
+bin/
+obj/
+
+# Arquivos compilados
+*.dll
+*.exe
+*.pdb
+
+# Pacotes do NuGet
+*.nupkg
+/packages/
+
+# Cache do NuGet
+.nuget/
+
+# Arquivos de log
+*.log
+
+# Arquivos temporários
+*.tmp
+*.bak
+
+# Arquivos de configuração
+appsettings*.json
+
+# Arquivos de backup do Visual Studio
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
